@@ -57,7 +57,7 @@ def run_hd_bet_function(input_data, input_spacing, mode="accurate", device=0,
 
     params = []
     for p in list_of_param_files:
-        params.append(torch.load(p, map_location=lambda storage, loc: storage))
+        params.append(torch.load(p, map_location=lambda storage, loc: storage, weights_only=True))
 
     data = preprocess_image_numpy(input_data, input_spacing, spacing_target=MODEL_SPACING)
 
