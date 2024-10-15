@@ -1,3 +1,8 @@
+# Note to this repo
+
+This repository contains a modified version of the HD-BET repository by Isensee et al, modified to be more generic and modular.
+The following is the original readme.
+
 # HD-BET 
 
 This repository provides easy to use access to our recently published HD-BET brain extraction tool. HD-BET is the result
