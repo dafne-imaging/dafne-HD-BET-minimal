@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 
 setup(name='HD_BET-minimal',
-      version='1.0',
+      version='1.1',
       description='Tool for brain extraction',
       url='https://github.com/dafne-imaging/dafne-HD-BET-minimal',
       python_requires='>=3.5',
@@ -16,12 +16,16 @@ setup(name='HD_BET-minimal',
       'appdirs',
       'requests',
       ],
-      packages=find_packages(include=['HD_BET_minimal']),
+      packages=find_packages(include=['HD_BET_minimal', 'HD_BET_minimal.models']),
       classifiers=[
           'Intended Audience :: Science/Research',
           'Programming Language :: Python',
           'Topic :: Scientific/Engineering',
           'Operating System :: Unix'
-      ]
+      ],
+      package_data= {
+          'HD_BET_minimal': ['models/*.model']
+      },
+      include_package_data=True
       )
 

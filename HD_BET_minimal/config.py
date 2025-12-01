@@ -4,7 +4,7 @@ from .utils import SetNetworkToVal, softmax_helper
 from abc import abstractmethod
 from .network_architecture import Network
 
-__VERSION__ = "1.0"
+__VERSION__ = "1.1"
 
 
 class BaseConfig(object):

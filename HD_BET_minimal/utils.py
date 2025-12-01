@@ -9,6 +9,10 @@ import numpy as np
 from skimage.morphology import label
 import os
 import hashlib
+import importlib.resources as pkg_resources
+from contextlib import contextmanager
+
+from . import models
 
 APP_NAME = "HD-BET-minimal"
 APP_DEVELOPER = "Dafne-imaging"
@@ -19,24 +23,41 @@ os.makedirs(MODEL_PATH, exist_ok=True)
 
 folder_with_parameter_files = MODEL_PATH
 
-def get_params_fname(fold):
-    return os.path.join(folder_with_parameter_files, "%d.model" % fold)
-
 SHA_SUMS = {
-    get_params_fname(0): '6f75233753c4750672815e2b7a86db754995ae44b8f1cd77bccfc37becd2d83c',
-    get_params_fname(1): '5fcd430c271bb5e13ea8d44f3d303b2dfafa4d0845c1aec6c5a7375f6d727189',
-    get_params_fname(2): '558ede4acb35537585219ece9c6b4b627dd3c019c6865daed0dfc80781dd94e9',
-    get_params_fname(3): '57bf67a58c9e925b13d5b9ae6d6bb648deaf759f6d0af2ccad67651d7a2a93db',
-    get_params_fname(4): '567689e4dff87debe357b30e4414c412485207657d1e99c33bf0bf587d28bf32'
+    0: '6f75233753c4750672815e2b7a86db754995ae44b8f1cd77bccfc37becd2d83c',
+    1: '5fcd430c271bb5e13ea8d44f3d303b2dfafa4d0845c1aec6c5a7375f6d727189',
+    2: '558ede4acb35537585219ece9c6b4b627dd3c019c6865daed0dfc80781dd94e9',
+    3: '57bf67a58c9e925b13d5b9ae6d6bb648deaf759f6d0af2ccad67651d7a2a93db',
+    4: '567689e4dff87debe357b30e4414c412485207657d1e99c33bf0bf587d28bf32'
 }
 
 SIZES = {
-    get_params_fname(0): 65443735,
-    get_params_fname(1): 65443803,
-    get_params_fname(2): 65443755,
-    get_params_fname(3): 65443847,
-    get_params_fname(4): 65443955
+    0: 65443735,
+    1: 65443803,
+    2: 65443755,
+    3: 65443847,
+    4: 65443955
 }
+
+@contextmanager
+def get_params_fname(fold: int, progress_callback: Optional[Callable[[int, int], None]] = None):
+    # try package resource first
+    with pkg_resources.as_file(pkg_resources.files(models).joinpath(f'{fold}.model')) as path:
+        try:
+            size = os.path.getsize(path)
+        except FileNotFoundError:
+            size = 0
+        if size == SIZES[fold]:
+            print("Returning model included in distribution")
+            yield path
+            return
+
+    print("Model not included in distribution")
+    # The models are not provided as resources
+    path = os.path.join(folder_with_parameter_files, f"{fold}.model")
+    download_parameter_file(path, fold, progress_callback)
+    yield path
+
 
 def check_sha256(fname, sha256):
     sha = hashlib.sha256()
@@ -45,16 +66,14 @@ def check_sha256(fname, sha256):
             sha.update(byte_block)
     return sha.hexdigest() == sha256
 
-def download_parameter_file(fold, progress_callback: Optional[Callable[[int, int], None]] = None):
-
-    path = get_params_fname(fold)
+def download_parameter_file(path, fold, progress_callback: Optional[Callable[[int, int], None]] = None):
 
     try:
         size = os.path.getsize(path)
     except FileNotFoundError:
         size = 0
 
-    if size != SIZES[path]:
+    if size != SIZES[fold]:
         print('Downloading checkpoint...')
         # model needs to be downloaded
         url = "https://zenodo.org/record/2540695/files/%d.model?download=1" % fold
@@ -73,7 +92,7 @@ def download_parameter_file(fold, progress_callback: Optional[Callable[[int, int
                     file.write(data)
 
             print("Downloaded size", current_size)
-            if current_size != total_size_in_bytes or not check_sha256(path, SHA_SUMS[path]):
+            if current_size != total_size_in_bytes or not check_sha256(path, SHA_SUMS[fold]):
                 print("Download failed!")
                 raise requests.ConnectionError("Error downloading model checkpoint")
 

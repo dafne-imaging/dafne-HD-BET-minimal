@@ -31,21 +31,13 @@ def run_hd_bet_function(input_data, input_spacing, mode="accurate", device=0,
 
     list_of_param_files = []
 
+    folds = 0
     if mode == 'fast':
-        params_file = get_params_fname(0)
-        download_parameter_file(0, progress_callback)
-
-        list_of_param_files.append(params_file)
+        folds = 1
     elif mode == 'accurate':
-        for i in range(5):
-            params_file = get_params_fname(i)
-            download_parameter_file(i, progress_callback)
-
-            list_of_param_files.append(params_file)
+        folds = 5
     else:
         raise ValueError("Unknown value for mode: %s. Expected: fast or accurate" % mode)
-
-    assert all([os.path.isfile(i) for i in list_of_param_files]), "Could not find parameter files"
 
     cf = config.config()
 
@@ -56,8 +48,9 @@ def run_hd_bet_function(input_data, input_spacing, mode="accurate", device=0,
         net.cuda(device)
 
     params = []
-    for p in list_of_param_files:
-        params.append(torch.load(p, map_location=lambda storage, loc: storage, weights_only=True))
+    for fold in range(folds):
+        with get_params_fname(fold, progress_callback) as p:
+            params.append(torch.load(p, map_location=lambda storage, loc: storage, weights_only=True))
 
     data = preprocess_image_numpy(input_data, input_spacing, spacing_target=MODEL_SPACING)
 
